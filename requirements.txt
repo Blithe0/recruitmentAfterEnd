@@ -1,0 +1,13 @@
+# ---------------------------
+# requirements.txt（需安装）
+# Flask==2.3.2
+# flask_sqlalchemy==3.0.5
+# flask_cors==4.0.0
+# pymysql==1.1.0
+
+# ---------------------------
+# 使用说明：
+# - 创建数据库 `recruitment`
+# - 执行表结构建表 SQL
+# - 启动服务： python run.py
+# - 测试接口：GET/POST/DELETE http://localhost:5000/api/user/

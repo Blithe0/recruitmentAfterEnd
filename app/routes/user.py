@@ -4,6 +4,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from app.models.user import User
 from app.extensions import db
 
+# user_bp = Blueprint('user', __name__, url_prefix='/user')
 user_bp = Blueprint('user', __name__, url_prefix='/api/user')
 
 @user_bp.route('', methods=['GET'])

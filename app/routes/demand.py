@@ -3,9 +3,9 @@ from flask import Blueprint, request, jsonify
 from app.models.demand import Demand
 from app.extensions import db
 
-# demand_bp = Blueprint('demand', __name__, url_prefix='/api/demand')
+demand_bp = Blueprint('demand', __name__, url_prefix='/api/demand')
 # demand_bp = Blueprint('demand', __name__, url_prefix='/api')
-demand_bp = Blueprint('demand', __name__, url_prefix='/demand')
+# demand_bp = Blueprint('demand', __name__, url_prefix='/demand')
 
 # 获取所有需求
 # demand_bp.route('/', methods=['GET'])(lambda: jsonify([d.to_dict() for d in Demand.query.all()]))
@@ -24,7 +24,7 @@ def get_demand(demand_id):
 def create_demand():
     data = request.get_json()
     demand = Demand(
-        department_id=data['department_id'],
+        # department_id=data['department_id'],
         job_name=data['job_name'],
         job_type=data['job_type'],
         job_place=data['job_place'],
@@ -32,7 +32,7 @@ def create_demand():
         job_description=data['job_description'],
         job_requirement=data['job_requirement'],
         reason=data['reason'],
-        demand_status='草稿'
+        demand_status='draft'
     )
     db.session.add(demand)
     db.session.commit()
@@ -42,7 +42,7 @@ def create_demand():
 @demand_bp.route('/<int:demand_id>', methods=['PUT'])
 def update_demand(demand_id):
     demand = Demand.query.get_or_404(demand_id)
-    if demand.demand_status != '草稿':
+    if demand.demand_status != 'draft':
         return jsonify({'error': '已提交的需求不可编辑'}), 400
 
     data = request.get_json()
@@ -60,7 +60,7 @@ def update_demand(demand_id):
 @demand_bp.route('/<int:demand_id>', methods=['DELETE'])
 def delete_demand(demand_id):
     demand = Demand.query.get_or_404(demand_id)
-    if demand.demand_status != '草稿':
+    if demand.demand_status != 'draft':
         return jsonify({'error': '已提交的需求不可删除'}), 400
 
     db.session.delete(demand)
@@ -71,9 +71,9 @@ def delete_demand(demand_id):
 @demand_bp.route('/<int:demand_id>/submit', methods=['POST'])
 def submit_demand(demand_id):
     demand = Demand.query.get_or_404(demand_id)
-    if demand.demand_status != '草稿':
+    if demand.demand_status != 'draft':
         return jsonify({'error': '仅草稿可提交'}), 400
 
-    demand.demand_status = '已提交'
+    demand.demand_status = 'submitted'
     db.session.commit()
     return jsonify({'message': '需求已提交'})

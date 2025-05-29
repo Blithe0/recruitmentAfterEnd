@@ -4,11 +4,8 @@ from app.models.demand import Demand
 from app.extensions import db
 
 demand_bp = Blueprint('demand', __name__, url_prefix='/api/demand')
-# demand_bp = Blueprint('demand', __name__, url_prefix='/api')
-# demand_bp = Blueprint('demand', __name__, url_prefix='/demand')
 
 # 获取所有需求
-# demand_bp.route('/', methods=['GET'])(lambda: jsonify([d.to_dict() for d in Demand.query.all()]))
 @demand_bp.route('/', methods=['GET'])
 def get_all_demands():
     return jsonify([d.to_dict() for d in Demand.query.all()])

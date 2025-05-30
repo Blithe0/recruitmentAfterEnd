@@ -66,8 +66,10 @@ def create_plan():
 @plan_bp.route('/<int:plan_id>/submit', methods=['POST'])
 def submit_plan(plan_id):
     plan = Plan.query.get_or_404(plan_id)
-    if plan.plan_status != 'draft':
-        return jsonify({'error': '仅草稿可提交'}), 400
+    if plan.plan_status not in ['draft', 'rejected']:
+        return jsonify({'error': '只有草稿或已驳回状态的计划才能提交'}), 400
+    # if plan.plan_status != 'draft':
+    #     return jsonify({'error': '仅草稿可提交'}), 400
 
     plan.plan_status = 'pending'
     db.session.commit()

@@ -14,6 +14,8 @@ class Plan(db.Model):
     plan_status = db.Column(db.Enum('draft', 'pending', 'approved', 'rejected'), default='draft', nullable=False)
     job_name = db.Column(db.String(45), nullable=False)
 
+    demand = db.relationship("Demand", backref="plans")
+
     def to_dict(self):
         return {
             'plan_id': self.plan_id,

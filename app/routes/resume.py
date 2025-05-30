@@ -1,67 +1,48 @@
+import os
+import uuid
 from flask import Blueprint, request, jsonify
-from app.models.resume import Resume
 from app.extensions import db
-from app.schemas.resume import ResumeCreateSchema, ResumeUpdateSchema
-from pydantic import ValidationError
-
-from app.resume_parser.parser_model import predict
+from app.models.resume import Resume
+from app.resume_parser.parser_model import parse_resume_pdf  # 你自定义的简历解析工具
 
 resume_bp = Blueprint('resume', __name__, url_prefix='/api/resume')
 
-# 获取所有简历
-@resume_bp.route('/', methods=['GET'])
-def get_all_resumes():
-    resumes = Resume.query.all()
-    return jsonify([r.to_dict() for r in resumes])
+UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), '../../uploads/resumes')
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# 添加简历
-@resume_bp.route('/', methods=['POST'])
-def create_resume():
-    try:
-        data = ResumeCreateSchema(**request.json)
-    except ValidationError as e:
-        return jsonify({'error': e.errors()}), 400
+# 上传简历并解析
+@resume_bp.route('/upload', methods=['POST'])
+def upload_resume():
+    file = request.files.get('file')
+    if not file or not file.filename.endswith('.pdf'):
+        return jsonify({'code': 1, 'msg': '仅支持PDF文件'}), 400
 
-    resume = Resume(**data.dict())
+    # 保存文件
+    filename = f"{uuid.uuid4().hex}.pdf"
+    save_path = os.path.join(UPLOAD_FOLDER, filename)
+    file.save(save_path)
+
+    # 解析PDF内容并提取结构化信息
+    parse_result = parse_resume_pdf(save_path)
+    # parse_result: dict, 比如 {name: ..., gender: ..., ...}
+    if not parse_result:
+        return jsonify({'code': 2, 'msg': '解析失败'}), 400
+
+    # 构建Resume对象，部分字段允许为空
+    resume = Resume(
+        name=parse_result.get('name', ''),
+        gender=parse_result.get('gender', ''),
+        age=parse_result.get('age', 0),
+        degree=parse_result.get('degree', ''),
+        skills=parse_result.get('skills', ''),
+        job_target=parse_result.get('job_target', ''),
+        phone=parse_result.get('phone', ''),
+        email=parse_result.get('email', ''),
+        file_path=f'/uploads/resumes/{filename}',
+        parse_json=parse_result,
+        status='pending'
+    )
     db.session.add(resume)
     db.session.commit()
-    return jsonify({'message': '简历创建成功', 'resume_id': resume.resume_id}), 201
 
-# 更新简历状态或信息
-@resume_bp.route('/<int:resume_id>', methods=['PUT'])
-def update_resume(resume_id):
-    resume = Resume.query.get_or_404(resume_id)
-    try:
-        data = ResumeUpdateSchema(**request.json)
-    except ValidationError as e:
-        return jsonify({'error': e.errors()}), 400
-
-    for field, value in data.dict(exclude_unset=True).items():
-        setattr(resume, field, value)
-
-    db.session.commit()
-    return jsonify({'message': '简历更新成功'})
-
-# 删除简历
-@resume_bp.route('/<int:resume_id>', methods=['DELETE'])
-def delete_resume(resume_id):
-    resume = Resume.query.get_or_404(resume_id)
-    db.session.delete(resume)
-    db.session.commit()
-    return jsonify({'message': '简历已删除'})
-
-@resume_bp.route('/parse', methods=['POST'])
-def parse_resume():
-    content = request.json.get('text', '')
-    if not content:
-        return jsonify({'error': 'No text provided'}), 400
-    parsed = predict(content)
-    return jsonify({'parsed': parsed})
-# def parse_resume():
-#     file_path = request.json.get('file_path')
-#     if not file_path or not os.path.exists(file_path):
-#         return jsonify({'msg': '文件路径无效'}), 400
-#
-#     parser = ResumeParser()
-#     result = parser.parse(file_path)  # 返回结构化json
-#     return jsonify(result)
+    return jsonify({'code': 0, 'msg': '上传成功', 'data': resume.to_dict()})

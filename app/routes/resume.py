@@ -1,48 +1,50 @@
-import os
-import uuid
+# app/routes/resume.py
 from flask import Blueprint, request, jsonify
 from app.extensions import db
 from app.models.resume import Resume
-from app.resume_parser.parser_model import parse_resume_pdf  # 你自定义的简历解析工具
+from app.schemas.resume import ResumeCreateSchema, ResumeResponseSchema
+from app.resume_parser.parser_model import parse_resume_pdf
+from pydantic import ValidationError
 
 resume_bp = Blueprint('resume', __name__, url_prefix='/api/resume')
 
-UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), '../../uploads/resumes')
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+@resume_bp.route('/', methods=['GET'])
+def get_resume_list():
+    resumes = Resume.query.all()
+    return jsonify([ResumeResponseSchema(**r.to_dict()).dict() for r in resumes])
 
-# 上传简历并解析
 @resume_bp.route('/upload', methods=['POST'])
 def upload_resume():
-    file = request.files.get('file')
-    if not file or not file.filename.endswith('.pdf'):
-        return jsonify({'code': 1, 'msg': '仅支持PDF文件'}), 400
+    """
+    接收前端上传的文件（form-data => file），
+    保存到本地，然后调用解析，最终写入 DB。
+    """
+    f = request.files.get('file')
+    if not f:
+        return jsonify({"error": "no file"}), 400
 
-    # 保存文件
-    filename = f"{uuid.uuid4().hex}.pdf"
-    save_path = os.path.join(UPLOAD_FOLDER, filename)
-    file.save(save_path)
+    # 1. 存储文件
+    save_path = f"./uploads/{f.filename}"
+    f.save(save_path)
 
-    # 解析PDF内容并提取结构化信息
-    parse_result = parse_resume_pdf(save_path)
-    # parse_result: dict, 比如 {name: ..., gender: ..., ...}
-    if not parse_result:
-        return jsonify({'code': 2, 'msg': '解析失败'}), 400
+    # 2. 解析
+    data = parse_resume_pdf(save_path)
 
-    # 构建Resume对象，部分字段允许为空
-    resume = Resume(
-        name=parse_result.get('name', ''),
-        gender=parse_result.get('gender', ''),
-        age=parse_result.get('age', 0),
-        degree=parse_result.get('degree', ''),
-        skills=parse_result.get('skills', ''),
-        job_target=parse_result.get('job_target', ''),
-        phone=parse_result.get('phone', ''),
-        email=parse_result.get('email', ''),
-        file_path=f'/uploads/resumes/{filename}',
-        parse_json=parse_result,
-        status='pending'
-    )
+    # 3. 数据验证 & 存库
+    try:
+        schema = ResumeCreateSchema(**data)
+    except ValidationError as e:
+        return jsonify({"error": e.errors()}), 400
+
+    resume = Resume(**schema.dict())
     db.session.add(resume)
     db.session.commit()
+    return jsonify({"message": "upload & parse success"}), 201
 
-    return jsonify({'code': 0, 'msg': '上传成功', 'data': resume.to_dict()})
+@resume_bp.route('/<int:resume_id>/status', methods=['PUT'])
+def update_status(resume_id):
+    json_in = request.get_json()
+    resume = Resume.query.get_or_404(resume_id)
+    resume.status = json_in.get('status', resume.status)
+    db.session.commit()
+    return jsonify({"message": "status updated"})

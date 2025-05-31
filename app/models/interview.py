@@ -6,7 +6,7 @@ INTERVIEW_TYPE_CHOICES = ('one', 'group', 'structured')
 class Interview(db.Model):
     __tablename__ = 'interview'
 
-    interview_id = db.Column(db.Integer, primary_key=True)
+    interview_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     candidate_id = db.Column(db.Integer, nullable=False)
     interviewer_id = db.Column(db.Integer, nullable=False)
     user_id = db.Column(db.Integer, nullable=False)

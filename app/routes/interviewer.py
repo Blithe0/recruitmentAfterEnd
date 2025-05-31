@@ -1,4 +1,5 @@
 from flask import Blueprint, jsonify, request
+from marshmallow import EXCLUDE
 from app.extensions import db
 from app.models.interviewer import Interviewer
 from app.schemas.interviewer import InterviewerSchema
@@ -37,12 +38,16 @@ def update(id):
     if not interviewer:
         return jsonify({'code': 1, 'msg': '面试官不存在'}), 404
 
-    data = schema.load(request.json)
-    interviewer.name = data['name']
-    interviewer.department_id = data['department_id']
-    interviewer.contact = data.get('contact', '')
-    db.session.commit()
-    return jsonify({'code': 0, 'msg': '更新成功'})
+    try:
+        # data = schema.load(request.json)
+        data = schema.load(request.json, unknown=EXCLUDE)  # 关键修改
+        interviewer.name = data['name']
+        interviewer.department_id = data['department_id']
+        interviewer.contact = data.get('contact', '')
+        db.session.commit()
+        return jsonify({'code': 0, 'msg': '更新成功'})
+    except Exception as e:
+        return jsonify({'code': 500, 'msg': '服务器错误', 'error': str(e)}), 500
 
 # 删除
 @interviewer_bp.route('/delete/<int:id>', methods=['DELETE'])

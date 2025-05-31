@@ -1,21 +1,21 @@
+# app/models/resume.py
 from app.extensions import db
-from sqlalchemy.dialects.mysql import ENUM, JSON
+
 
 class Resume(db.Model):
     __tablename__ = 'resume'
-
-    resume_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    resume_id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    gender = db.Column(ENUM('男', '女'), nullable=False)
-    age = db.Column(db.Integer, nullable=False)
-    degree = db.Column(db.String(50), nullable=False)
+    gender = db.Column(db.Enum('男', '女', '未知'), default='男')
+    age = db.Column(db.Integer)
+    degree = db.Column(db.String(50))
     skills = db.Column(db.Text)
     job_target = db.Column(db.String(100))
     phone = db.Column(db.String(20))
     email = db.Column(db.String(100))
     file_path = db.Column(db.String(255))
-    parse_json = db.Column(JSON)
-    status = db.Column(ENUM('pending', 'pass', 'reject'), default='pending')
+    parse_json = db.Column(db.JSON)
+    status = db.Column(db.Enum('pending', 'pass', 'reject'), default='pending')
 
     def to_dict(self):
         return {

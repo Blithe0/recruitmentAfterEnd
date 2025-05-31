@@ -97,3 +97,16 @@ def recover_job(job_id):
     job.job_status = 'recruiting'
     db.session.commit()
     return jsonify({'message': 'Job recovered to recruiting status'}), 200
+
+
+@job_bp.route('/options', methods=['GET'])
+def get_job_options():
+    jobs = Job.query.all()
+    data = [
+        {
+            'label': job.plan.job_name,
+            'value': job.job_id
+        }
+        for job in jobs
+    ]
+    return jsonify({'code': 0, 'data': data})

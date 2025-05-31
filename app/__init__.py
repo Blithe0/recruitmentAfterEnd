@@ -6,6 +6,9 @@ from app.routes.demand import demand_bp
 from app.routes.plan import plan_bp
 from app.routes.job import job_bp
 from app.routes.resume import resume_bp
+from app.routes.talent import talent_bp
+from app.routes.interview import interview_bp
+from app.routes.interviewer import interviewer_bp
 
 def create_app():
     app = Flask(__name__)
@@ -19,4 +22,8 @@ def create_app():
     app.register_blueprint(plan_bp)
     app.register_blueprint(job_bp)
     app.register_blueprint(resume_bp)
+    app.register_blueprint(talent_bp)
+    app.register_blueprint(interview_bp)
+    app.register_blueprint(interviewer_bp)
+
     return app

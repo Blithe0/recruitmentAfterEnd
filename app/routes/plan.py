@@ -106,3 +106,17 @@ def delete_plan(plan_id):
     db.session.delete(plan)
     db.session.commit()
     return jsonify({'message': '计划已删除'})
+
+# 获取通过的计划
+@plan_bp.route('/options/approved', methods=['GET'])
+def get_approved_plan_options():
+    """
+    返回 plan_status = 'approved' 的记录，格式：
+      [{ label: plan.job_name, value: plan.plan_id }, ...]
+    """
+    approved_plans = Plan.query.filter_by(plan_status='approved').all()
+    options = [
+        {'label': plan.job_name, 'value': plan.plan_id}
+        for plan in approved_plans
+    ]
+    return jsonify({'code': 0, 'data': options})

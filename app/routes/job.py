@@ -117,3 +117,13 @@ def get_released_jobs():
     jobs = Job.query.filter_by(job_status='released').all()
     job_list = [{'label': job.job_name, 'value': job.job_id} for job in jobs]
     return jsonify({'code': 0, 'msg': '获取成功', 'data': job_list})
+
+@job_bp.route('/options/released', methods=['GET'])
+def get_released_job_options():
+    """
+    只返回 status = 'released' 的岗位（下拉列表用），格式：
+      [{ label: job_name, value: job_id }, …]
+    """
+    released_jobs = Job.query.filter_by(job_status='released').all()
+    options = [{'label': job.job_name, 'value': job.job_id} for job in released_jobs]
+    return jsonify({'code': 0, 'data': options})

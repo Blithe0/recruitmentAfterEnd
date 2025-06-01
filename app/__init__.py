@@ -9,6 +9,7 @@ from app.routes.resume import resume_bp
 from app.routes.talent import talent_bp
 from app.routes.interview import interview_bp
 from app.routes.interviewer import interviewer_bp
+from app.routes.selection import selection_bp
 
 def create_app():
     app = Flask(__name__)
@@ -25,5 +26,6 @@ def create_app():
     app.register_blueprint(talent_bp)
     app.register_blueprint(interview_bp)
     app.register_blueprint(interviewer_bp)
+    app.register_blueprint(selection_bp)
 
     return app

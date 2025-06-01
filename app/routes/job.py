@@ -110,3 +110,10 @@ def get_job_options():
         for job in jobs
     ]
     return jsonify({'code': 0, 'data': data})
+
+# 获取发布岗位信息
+@job_bp.route('/released', methods=['GET'])
+def get_released_jobs():
+    jobs = Job.query.filter_by(job_status='released').all()
+    job_list = [{'label': job.job_name, 'value': job.job_id} for job in jobs]
+    return jsonify({'code': 0, 'msg': '获取成功', 'data': job_list})
